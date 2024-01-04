@@ -1,2 +1,6 @@
-# Loan_prediction_usingR
-Here I am going to use R programming to predict loan status
+# Loan status prediction using R programming
+
+# Music Recommendation System
+<p align="center">
+<img src="data/loan-process.png" width="400" height="350" title="Loan" alt="Loan Logo">
+</p>
