@@ -1,0 +1,1184 @@
+---
+title: "Loan Approval Status"
+author: "TEAM 7- Richik Ghosh, Shreya Sahay, Sanika Narayanapethkar, Vamsidhar Boddu"
+date: "`r Sys.Date()`"
+
+output:
+  rmdformats::readthedown:
+    code_folding: hide
+    highlight: pygments
+---
+
+<style type="text/css">
+p{ /* Normal  */
+   font-size: 18px;
+}
+body{ /* Normal  */
+   font-size: 18px;
+}
+td {  /* Table  */
+   font-size: 14px;
+}
+h1 { /* Header 1 */
+ font-size: 32px;
+}
+h2 { /* Header 2 */
+ font-size: 26px;
+}
+h3 { /* Header 3 */
+ font-size: 22px;
+}
+code.r{ /* Code block */
+  font-size: 14px;
+}
+pre { /* Code block */
+  font-size: 14px
+}
+body {
+  text-align: justify;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+```
+
+```{r,echo=FALSE,results='hide'}
+library(ezids)
+library(ggplot2)
+library(gridExtra)
+library(stringr)
+library(corrplot)
+library(RColorBrewer)
+library(scales)
+library(dplyr)
+library("car")
+library("class")
+library("pROC")
+library(randomForest)
+library("leaps")
+library("bestglm")
+library("regclass")
+library("gmodels")
+library("caret") 
+library(rpart)
+```
+
+# Abstract
+
+Leveraging a Kaggle dataset comprising 4269 records and 13 columns, our project endeavors to forecast individual loan approval status. The dataset incorporates applicant details like education, self-employment status, annual income, CIBIL score, and asset values. Our in-depth analysis, documented on GitHub using R Markdown, employs diverse visualizations, statistical methods, and modeling techniques. The resulting insights have the potential to assist both lenders and borrowers by addressing requirements and reducing rejection rates.
+
+# Introduction
+
+Our project, driven by personal experiences as international students, explores the financial challenges of pursuing academic dreams abroad. Having navigated the complexities of loan applications, particularly for education, we recognize broader implications across various markets. The global Personal Loan market, valued at $47.79 billion in 2020, is projected to reach $719.31 billion by 2030. The Global Student Loan market, at $3.93 trillion in 2021, is expected to grow to $8.75 trillion by 2031 (8.7% CAGR). The Global Automotive Finance market, valued at $259.84 billion in 2022, foresees a steady 7.3% CAGR from 2023 to 2030. Simultaneously, the Global Home Loan market, at $4.52 trillion in 2021, is set to soar to $33.3 trillion by 2031 (22.3% CAGR). Additionally, the global FinTech lending market, valued at $449.89 billion in 2020, is projected to reach $4,957.16 billion by 2030. Through our project, we aim to provide valuable insights into loan dynamics, potentially enhancing application efficiency and success rates globally.
+
+
+# Literature Survey
+
+In this literature survey, we explore existing research on loan approval prediction. Reviewing traditional methods, machine learning models, and recent trends will inform our study, addressing gaps and challenges.
+Sheikh et al. [1] performed a machine learning based analysis of loan approval by employing several models such as Support Vector Machine, Logistic Regression etc. Ndayisenga [2] applied advanced algorithms like Gradient Boosting and Random Forest, through which they concluded the significant emphasis on credit score on the likelihood of loan approval. Additionally, Murthy et al.’s [3] research involved analyzing the probability of loan approval using KNN and Decision Tree, along with a dedicated portal for quick decision making.
+
+# Data and Methodology
+
+The project "Loan Approval Dataset" utilizes a comprehensive dataset sourced from Kaggle, featuring records of 4269 applicants. This dataset includes attributes such as Education, No. of Dependents, Self-Employment, Annual Income, Value of Assets, CIBIL Score, and Loan status.
+
+The goal of this project is to analyze applicant records and identify the factors contributing to loan approval.
+
+
+* __Data Preparation__
+
+    + Data Collection:
+        The dataset, sourced from the reputable data-sharing platform Kaggle, provides a robust repository of loan applicant records.
+    
+    + Data Cleaning:
+        We performed data cleansing, addressing null values, removing irrelevant columns, validating data types, and ensuring overall dataset consistency for enhanced accuracy and reliability.
+        
+
+* __Methodological Approach__
+
+     + Descriptive Statistics:
+          The dataset underwent initial exploration through the computation of summary statistics, shedding light on the educational status, employment details, CIBIL Score, and asset values of applicants. The analysis categorized loan status into two variables: Approved and Rejected.
+          
+     + Visualization Techniques: 
+          Diverse visualization functions were employed to craft informative charts and graphs, facilitating the effective presentation of findings and enhancing the comprehension of complex patterns.
+
+     + Hypothesis Testing: 
+          Various Statistical tests were conducted to validate hypotheses.
+          
+     + Correlation Analysis: 
+          Correlation techniques were applied to examine the relationships between variables concerning loan status.
+
+     + Variable Factorization:
+          Qualitative variables were factored using the as.factor() function for analysis optimization.
+
+# Data preprocessing 
+
+# Importing the Data
+
+```{r,echo=FALSE}
+
+data_pre<-data.frame(read.csv("loan_approval_dataset.csv"))
+data<-data_pre
+```
+
+
+# Structure of the data
+
+```{r,echo=FALSE,results='markup'}
+str(data)
+```
+
+**Description of the variables:**
+
+* `loan_id`: Loan Application Id
+
+* `no_of_dependents`: Applicant Dependents
+
+* `education`: Graduate/Not Graduate
+
+* `self_employed`: Yes/No
+
+* `income_annum`: Annual Income
+
+* `loan_amount`: Loan Value
+
+* `loan_term`: Loan Term in Years
+
+* `cibil_score`: Credit Score
+
+* `residential_assets_value`: Value of Residential Assets
+
+* `commercial_assets_value` : Value of Commercial Assets
+
+* `luxury_assets_value` : Value of Luxury Assets
+
+* `bank_asset_value`: Value of Bank Assets
+
+* `loan_status`: Approved / Rejected
+
+These variables are further classified as:
+
+* Qualitative: `education`, `self_employed`, `loan_status`
+ 
+* Quantitative: `no_of_dependents`, `income_annum`, `loan_amount`, `loan_term`, `cibil_score`,     `residential_assets_value`, `commercial_assets_value`, `luxury_assets_value`, `bank_asset_value`, `loan_status`
+
+
+```{r,echo=FALSE}
+NA_values <- sum(is.na(data))
+NA_values
+```
+
+
+```{r,echo=FALSE}
+data<- subset(data_pre, select = -c(loan_id))
+```
+
+We excluded the `loan_id` variable using the `subset()` function, considering its minimal contribution to data analysis.
+
+
+```{r,echo=FALSE}
+data$education <- as.factor(data$education)
+data$self_employed<-as.factor(data$self_employed)
+data$loan_status<-as.factor(data$loan_status)
+```
+
+
+## Summary of the data
+
+```{r,echo=FALSE,results='markup'}
+summary(data)
+```
+
+The `summary()` function provides a statistical summary of the entire dataset.
+
+# Visualizations
+
+## Data Pre-processing
+
+```{r,echo=FALSE}
+data <- data %>%
+  mutate(self_employed = str_trim(self_employed))
+```
+
+```{r, echo=FALSE}
+data <- data %>%
+  mutate(education = str_trim(education))
+```
+
+```{r, echo=FALSE}
+data <- data %>%
+  mutate(loan_status = str_trim(loan_status))
+```
+
+We have removed unnecessary whitespaces from column names
+
+```{r, echo=FALSE}
+data$education<-as.factor(data$education)
+data$self_employed<-as.factor(data$self_employed)
+data$loan_status<-as.factor(data$loan_status)
+```
+
+
+```{r, echo=FALSE}
+class(data$self_employed)
+class(data$luxury_assets_value)
+class(data$income_annum)
+class(data$loan_status)
+```
+
+```{r, echo=FALSE}
+str(data)
+```
+
+```{r,echo=FALSE}
+data1 <- data
+data1$self_employed <- as.integer(data$self_employed == "Yes")
+data1$loan_status <- as.integer(data$loan_status == "Approved")
+data1$education <- as.integer(data$education == "Graduate")
+```
+
+## Box plot of Number of Dependents and Loan Status
+
+```{r, echo=FALSE,results='markup'}
+ggplot(data, aes(y = no_of_dependents, x = loan_status, fill = loan_status)) +
+  geom_boxplot(binwidth = 0.5, color = "black", alpha = 0.9) +
+  labs(
+    title = "Box plot of number of dependents and loan status",
+    x = "Loan Status",
+    y = "Number of Dependents"
+  ) +
+  scale_fill_manual(values = c("#93C572", "#4682B4"))+theme_minimal()
+```
+
+The box plot comparing the number of dependents and loan status reveals minimal variation. Both approved and rejected statuses exhibit similar distributions, with consistent median values. This suggests that the number of dependents has no significant impact on loan approval status.
+
+## Density plot of Loan Term based on Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x = loan_term,fill=loan_status)) +
+  geom_density() +
+  theme_bw() +
+  theme() +
+  labs(
+    title = "Density plot of Loan Term based on Loan Status",
+    x = "Loan Term (Years)",
+    y = "Density of the Applicants"
+  )+scale_fill_manual(values = c("#93C572", "#4682B4")) + theme_minimal()
+```
+
+The density plot highlights a clear relationship between loan approval/rejection and the loan term. Notably, applications with a term of 0-5 years show the highest approval rate, while those exceeding 5 years face more rejections. This pattern indicates a lending strategy favoring individuals capable of immediate repayment.
+
+## Scatter Plot of CIBIL Score vs Loan Amount
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x= cibil_score, y = loan_amount, color = loan_status)) +
+  geom_point() +
+  labs(title = "Scatter Plot of CIBIL Score vs Loan Amount",
+       x = "CIBIL Score",
+       y = "Loan Amount") +
+  scale_color_manual(values = c("#93C572", "#4682B4")) + scale_x_continuous(breaks = seq(min(data$cibil_score), max(data$cibil_score), by = 50))+scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) + theme_minimal()
+```
+
+The scatter plot reveals a distinct correlation between loan amount and CIBIL score. Rejections are prominent in the CIBIL score range of 300-550, while approvals rise significantly beyond a CIBIL score of 550, even for loan amounts exceeding 35M.
+
+## Stacked Bar between Loan Status and Self Employment
+
+```{r,echo=FALSE,results='markup'}
+data$self_employed <- factor(data$self_employed, levels = c("Yes", "No", "Other"))
+
+ggplot(data, aes(x =loan_status, fill = self_employed)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Stacked Bar Chart between Loan Status and Self Employment",
+       x = "Loan Status",
+       y = "Frequency",
+       fill = "self_employed") + scale_fill_manual(values = c("Yes" = "#93C572", "No" = "#4682B4", "Other" = "gray")) +
+  theme_minimal()
+```
+
+The bar plot shows minimal differentiation in loan approval rates between self-employed and non-self-employed individuals, suggesting that self-employment may not be a decisive factor influencing loan approval.
+
+## Scatter Plot of Loan Amount vs Commercial assets value based on Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x= commercial_assets_value, y = loan_amount, color = loan_status)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Commercial assets value vs Loan Amount",
+       x = "Commercial assets value",
+       y = "Loan Amount") +scale_color_manual(values = c("#93C572", "#4682B4")) +scale_x_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000))+scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +theme_minimal()
+```
+
+The scatter plot depicts a positive correlation between commercial asset value and loan amount, implying larger loans align with higher asset values. Similar distributions for approvals and rejections yield comparable approval and rejection rates for both commercial asset value and loan amount.
+
+## Scatter Loan Amount vs Residential Assets Value based on Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x= residential_assets_value, y = loan_amount, color = loan_status)) +
+  geom_point() +
+  labs(title = "Scatter Plot Loan Amount vs Residential Assets Value",
+       x = "Residential Assets value",
+       y = "Loan Amount") +scale_color_manual(values = c("#93C572", "#4682B4")) +scale_x_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +theme_minimal()
+```
+
+The graph indicates a positive correlation between residential asset value and loan amount, implying that higher residential values correspond to increased loan amounts. Similar distributions for approvals and rejections result in equal approval and rejection rates.
+
+## Scatter Plot of Loan Amount vs Luxury assets value based on Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x= luxury_assets_value, y = loan_amount, color = loan_status)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Luxury assets value vs Loan Amount",
+       x = "Luxury Assets value",
+       y = "Loan Amount") +scale_color_manual(values = c("#93C572", "#4682B4")) +scale_x_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +theme_minimal()
+```
+
+The scatter plot reveals a positive correlation between luxury asset value and loan amount, suggesting that an increase in luxury asset value corresponds to higher loan amounts, with elevated chances of approval.
+
+## Scatter Plot of Loan Amount vs Bank Assets Value
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x= bank_asset_value, y = loan_amount, color = loan_status)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Loan Amount vs Bank Assets Value",
+       x = "Bank Assets value",
+       y = "Loan Amount") +scale_color_manual(values = c("#93C572", "#4682B4")) +scale_x_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +theme_minimal()
+```
+
+Based on the graph, there is a positive correlation between luxury assets value and loan amount, indicating that as luxury assets value increases, so does the loan amount.
+
+## Scatter Plot of Loan Amount vs Income Per Annum based on Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x= income_annum, y = loan_amount, color = loan_status)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Annual Income vs Loan Amount",
+       x = "Annual Income",
+       y = "Loan Amount") +scale_color_manual(values = c("#93C572", "#4682B4")) +scale_x_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000)) +theme_minimal()
+```
+
+The scatter plot indicates a direct correlation between annual income and loan amount, implying higher income aligns with larger loans. Approval and rejection rates appear consistent across different income and loan amount levels.
+
+## Box plot between Cibil Score vs Self Employed based on Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x = self_employed, y = cibil_score, fill=loan_status)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "Box plot between loan status and CIBIL score",
+       x = "Self Employed",
+       y = "CIBIL score")+
+  scale_fill_manual(values = c("Approved" = "#93C572", "Rejected" = "#4682B4"))+
+  theme_minimal()
+```
+
+The box plot analysis indicates that CIBIL score significantly influences loan status, whereas self-employment status does not exhibit a notable impact.
+
+## Density Plot of Bank Assets grouped by Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x = bank_asset_value, fill = loan_status)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Bank Assets grouped by Loan Status",
+       x = "Bank Assets",
+       y = "Density")+scale_fill_manual(values = c("Approved" = "#93C572", "Rejected" = "#4682B4"))+
+  theme_minimal()+scale_x_continuous(labels = comma_format(scale = 1e-7,suffix = "M"))
+```
+
+Analyzing the density plot reveals a consistent loan status irrespective of bank assets, suggesting loan approval's independence from bank assets sfluctuations.
+
+## Density Plot of CIBIL Score grouped by Loan Status
+
+```{r,echo=FALSE,results='markup'}
+ggplot(data, aes(x = cibil_score, fill = loan_status)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Cibil Score grouped by Loan Status",
+       x = "CIBIL Score",
+       y = "Density")+scale_fill_manual(values = c("Approved" = "#93C572", "Rejected" = "#4682B4"))+
+  theme_minimal()
+```
+
+The density plot highlights that applicants with a higher CIBIL score (typically 500+) have a greater likelihood of loan approval, while applications with a score below that are rejected. This underscores the crucial role of a good CIBIL score and its significant impact on loan applications.
+
+## Correlation Plot
+
+```{r,echo=FALSE,results='markup'}
+x <- cor(data1)
+corrplot(x, type = "full", tl.cex = 0.7, method = "color", col = colorRampPalette(brewer.pal(6, "PuOr"))(100))
+```
+
+The correlation plot underscores the crucial link between `cibil_score` and `loan_status`, highlighting a strong correlation. Additionally, `loan_amount` shows noteworthy connections with various asset values, underscoring the importance of creditworthiness and financial factors in loan approval.
+
+#STATISTICAL TEST
+
+```{r,echo=FALSE}
+Approved<-subset(data,data$loan_status=="Approved")
+rejected<-subset(data,data$loan_status=="Rejected")
+```
+
+
+## T-Test on Loan Status (Approval/Rejection) and Cibil Score
+
+```{r,echo=FALSE,results='markup'}
+alpha=0.05
+test_cibil<-t.test(Approved$cibil_score,rejected$cibil_score)
+test_cibil
+```
+
+Null Hypothesis ($H_{0}$): CIBIL score has no significant association with loan status.
+
+Alternate Hypothesis ($H_{A}$): CIBIL score has significant association with loan status.
+
+The `p-value` $`r test_cibil$p.value`$, is very less than the standard `alpha` value of 0.05, hence, we reject the NULL hypothesis and conclude that CIBIL score has significant association with the probability of loan approval.
+
+
+## Chi-squared test between Education and Loan Status
+
+```{r,echo=FALSE,results='markup'}
+c<-table(data$education, data$loan_status)
+c_test2<-chisq.test(c)
+c_test2
+```
+
+
+Null Hypothesis ($H_{0}$): Education level and loan status are independent of each other.
+
+Alternate Hypothesis ($H_{A}$): Education level and loan status are dependent on each other.
+
+The high `p-value` of $`r c_test2$p.value`$ for education level and loan status leads to the acceptance of the null hypothesis. Consequently, we conclude that an applicant's education level has no significant impact on loan approval.
+
+
+## T-Test between Loan Status and Bank Asset Value
+
+```{r,echo=FALSE,results='markup'}
+test_bank_asset<-t.test(Approved$bank_asset_value,rejected$bank_asset_value)
+test_bank_asset
+```
+
+Null Hypothesis ($H_{0}$): Bank asset value and loan status are independent of each other.
+
+Alternative Hypothesis ($H_{A}$): Bank asset value and loan status are dependent on each other.
+
+Bank Asset Value and loan status have a high `p-value` of $`r test_bank_asset$p.value`$. Thus, we cannot reject the null hypothesis. We can therefore state that bank asset value and loan status are independent of each other and are not significantly associated.
+
+## T-Test between Loan Status and Resedential Assets Value
+
+```{r,echo=FALSE,results='markup'}
+test_residential<-t.test(Approved$residential_assets_value,rejected$residential_assets_value)
+test_residential
+```
+
+Null Hypothesis ($H_{0}$): There is no significant association between the values of residential asset and loan approval status.
+
+Alternative Hypothesis ($H_{A}$): There is a significant association between the values of residential asset and loan approval status.
+
+With a `p-value` of $`r test_residential$p.value`$, we cannot reject the null hypothesis and thus, we conclude from the null hypothesis that there exists no significant association between residential assets value and loan status.
+
+
+## T-test between number of dependents and loan status 
+
+```{r,echo=FALSE,results='markup'}
+Approved<-subset(data,data$loan_status=="Approved")
+rejected<-subset(data,data$loan_status=="Rejected")
+test<-t.test(Approved$no_of_dependents,rejected$no_of_dependents)
+test
+```
+
+Null Hypothesis ($H_{0}$): There is no significant association between the number of dependents and loan approval status.
+
+Alternative Hypothesis ($H_{A}$): There is a significant association between the number of dependents and loan approval status.
+
+With a `p-value` of $`r test$p.value`$, we fail to reject the null hypothesis. Therefore, we can conclude that there is no significant association between the number of dependents and loan status.
+
+
+## T-test between luxury assets value and loan status
+
+```{r,echo=FALSE,results='markup'}
+a<-subset(data,data$loan_status=="Approved")
+r<-subset(data,data$loan_status=="Rejected")
+test2=t.test(a$luxury_assets_value,r$luxury_assets_value)
+test2
+```
+
+Null Hypothesis ($H_{0}$): The luxury assets value of an applicant has no significant association with their loan status.
+
+Alternate Hypothesis ($H_{A}$): The luxury assets value of an applicant has significant association with their loan status.
+
+With a `p-value` of $`r test2$p.value`$, we cannot reject the null hypothesis and thus, we conclude that the luxury assets value of an applicant has no significant association with their loan status.
+
+
+```{r,echo=FALSE,results='markup'}
+correlation_result <- cor.test(data$loan_term, data$loan_amount)
+cat("Pearson Correlation Coefficient:", correlation_result$estimate, "\n")
+cat("p-value:", correlation_result$p.value, "\n")
+```
+
+The low Pearson correlation coefficient $`r correlation_result$estimate`$ indicates a weak relationship between `loan_term` and `loan_amount`. Moreover, the high `p-value` $`r correlation_result$p.value`$ suggests the observed correlation is not statistically significant.
+
+# Model Selection
+
+### Regression problem
+
+```{r,echo=FALSE,results='markup'}
+#This is essentially best fit 
+reg.best10 <- regsubsets(loan_amount~. , data = data, nvmax = 10, nbest = 2, method = "exhaustive")  # leaps::regsubsets() - Model selection by exhaustive (default) search, forward or backward stepwise, or sequential replacement
+#The plot will show the Adjust R^2 when using the variables across the bottom
+plot(reg.best10, scale = "adjr2", main = "Adjusted R^2")
+plot(reg.best10, scale = "r2", main = "R^2")
+# In the "leaps" package, we can use scale=c("bic","Cp","adjr2","r2")
+plot(reg.best10, scale = "bic", main = "BIC")
+plot(reg.best10, scale = "Cp", main = "Cp")
+summary(reg.best10)
+```
+
+The `regsubsets()` identifies the optimal subset of predictor variables by minimizing or maximizing selected criteria like Adjusted R-squared (adjr2), R-squared (r2), Bayesian Information Criterion (BIC), or Mallows' Cp.
+
+In case of the Adjusted R-squared plot, the best possible set of predictors are found to be: `no_of_dependents`, `loan_term`, `income_annum`, `commercial_assests_value`, `cibil_score` and `loan_status`.
+In case of the R-squared plot, the best possible set of predictors are found to be: `no_of_dependents`, `loan_term`, `income_annum`, `commercial_assests_value`, `cibil_score` and `loan_status`.
+From the BIC plot we can observe that the best possible set of predictors are found to be: `no_of_dependents`, `loan_term`, `income_annum`, `residential_assets_value`, `commercial_assests_value`, `cibil_score` and `loan_status`.
+From the Cp Mallow plot we can observe that the best possible set of predictors are found to be: `no_of_dependents`, `income_annum`, `residential_assets_value`, `commercial_assests_value`, `cibil_score` and `loan_status`.
+
+
+```{r, echo=FALSE,results='markup'}
+summaryRegForward = summary(reg.best10)
+# Adjusted R2
+car::subsets(reg.best10, statistic="adjr2", legend = FALSE, min.size = 7, main = "Adjusted R^2 Plot")
+```
+From the Adjusted R-squared statistic plot, the most suitable set of predictors are found to be: `no_of_dependents`, `loan_term`, `income_annum`, `commercial_assests_value`, `cibil_score`, `commercial_assests_value`, `luxury_assests_value` and `loan_status`.
+
+```{r, echo=FALSE,results='markup'}
+subsets(reg.best10, statistic="cp", legend = FALSE, min.size = 4, main = "Mallow Cp Plot")
+abline(a = 1, b = 1, lty = 3) 
+```
+The most relevant predictors from the Mallow Cp plot are found to be `no_of_dependents`, `income_annum`, `commercial_assests_value`, `cibil_score` and `loan_status`.
+
+### Classification Problem
+
+```{r, echo=FALSE,results='markup'}
+res.bestglm <- bestglm(Xy = data, family = binomial,
+            IC = "AIC",                 
+            method = "exhaustive")
+summary(res.bestglm)
+```
+```{r, echo=FALSE,results='markup'}
+res.bestglm$BestModels
+summary(res.bestglm$BestModels)
+```
+
+
+# Model Creation
+
+In our analysis, we utilize a dual approach, employing regression for predicting loan amount and classification for determining loan status. This enhances our model's predictive capabilities in addressing different facets of the loan application process.
+
+
+## Train Test Split
+
+The dataset was initially examined for the distribution of the target variable, loan_status (indicating loan approval). To promote model generalization, the data was later divided into training (80%) and test (20%) sets, ensuring reproducibility with a specified seed.
+
+```{r, echo=FALSE,results='markup'}
+table(data$loan_status)
+table(data$loan_status)[2] / sum(table(data$loan_status))
+
+set.seed(1)
+data_train_rows = sample(1:nrow(data),     
+                              round(0.8 * nrow(data), 0),  
+                              replace = FALSE)       
+
+length(data_train_rows) / nrow(data)
+
+data_train = data[data_train_rows, ]  
+data_test = data[-data_train_rows, ]  
+
+nrow(data_train)
+nrow(data_test)
+```
+
+## Regression
+
+### Linear Regression
+
+A linear regression model was constructed using the `lm()` function, predicting loan_amount based on various features, including `no_of_dependents`, `loan_term`, `income_annum`, `commercial_assets_value`, `cibil_score`, and `loan_status.` 
+
+```{r, echo=FALSE,results='markup'}
+model<-lm(loan_amount~no_of_dependents+loan_term+income_annum+commercial_assets_value+cibil_score+loan_status,data=data)
+summary(model)
+
+ezids::xkabledply(model,title = "Summary of loan amount prediction")
+ezids::xkablevif(model)
+```
+
+
+The summary statistics and variance inflation factor (VIF) were analyzed for insights, which gives us values lesser than 3 which means there is no multicollinearity in our features.
+
+
+### Results
+
+
+```{r,echo=FALSE,results='markup'}
+model <- lm(loan_amount ~ no_of_dependents + loan_term + income_annum + 
+            commercial_assets_value + cibil_score + loan_status, data = data_train)
+
+
+train_predictions <- predict(model, newdata = data_train)
+test_predictions <- predict(model, newdata = data_test)
+plot_data <- data.frame(Actual = data_test$loan_amount, Predicted = test_predictions)
+
+
+train_r_squared <- cor(data_train$loan_amount, train_predictions)^2
+cat("Training R-squared:", train_r_squared, "\n")
+
+
+test_r_squared <- cor(data_test$loan_amount, test_predictions)^2
+cat("Testing R-squared:", test_r_squared, "\n")
+
+ggplot(plot_data, aes(x = Actual, y = Predicted)) +
+  geom_point(color="#93C572") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  labs(title = "Actual vs Predicted Values",
+       x = "Actual Values",
+       y = "Predicted Values")+scale_x_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000))+scale_y_continuous(labels = comma_format(scale = 1e-6,suffix = "M"), breaks = seq(0, 35000000, by = 5000000))+theme_minimal()
+```
+
+
+The scatter plot displays the actual versus predicted loan amounts, with a dashed red line denoting the ideal prediction scenario. R-squared values (r test_r_squared) for training and testing underscore the model's strong explanatory power and generalization to new data.
+
+## Classification
+
+
+### Logistic Regression
+
+This study uses logistic regression to create a predictive model for loan status, leveraging the glm() function. Key features, including dependents, annual income, loan amount, term, CIBIL score, luxury assets value, and bank assets value, are highlighted. 
+
+### Model building
+```{r, echo=FALSE,results='markup'}
+Logit <- glm(loan_status ~ no_of_dependents  + income_annum+loan_amount+loan_term+cibil_score+luxury_assets_value+bank_asset_value, data = data_train, family = "binomial")
+summary_output<-summary(Logit)
+summary_output
+```
+
+
+The coefficients table reveals the estimated effects of each predictor on the log-odds of loan approval. Key findings include:
+
+The intercept has a substantial positive effect on the log-odds.
+Variables such as `loan_term` and `CIBIL_score` significantly impact loan approval, as indicated by their respective `z-values` and low `p-values`.
+`no_of_dependents`, `income_annum`, `loan_amount`, `luxury_assets_value`, and `bank_asset_value` show minimal impact on loan approval.
+
+
+### Feature Importance
+```{r ,echo=FALSE,results='markup'}
+ezids::xkabledply(Logit, title =" Summary of logistic Regression for loan status")
+expcoeff = exp(coef(Logit))
+# expcoeff
+ezids::xkabledply( as.table(expcoeff), title = "Exponential of coefficients in Logit Reg" )
+```
+
+ **Feature importance summary:**
+ 
+ 
+- The intercept is notably high, serving as a baseline for loan approval odds.
+- Number of dependents has minimal impact (non-significant).
+- Annual income and loan amount show limited influence on loan approval odds (coefficient of 1.00).
+- Loan term has a substantial positive impact on approval odds (16% increase per unit).
+- Higher CIBIL scores correspond to lower odds of loan approval.
+- Luxury assets and bank assets show minimal impact on approval odds.
+
+
+### Data imbalance
+```{r,echo=FALSE,results='markup'}
+
+# prediction
+data_train$prediction <- predict( Logit, newdata = data_train, type = "response")
+data_test$prediction  <- predict( Logit, newdata = data_test , type = "response")
+
+
+ggplot( data_train, aes( prediction, color = as.factor(loan_status) ) ) + 
+geom_density( size = 1 ) +
+ggtitle( "Training Set's Predicted Score" )+ labs(color = "Loan Status") 
+```
+
+
+
+- The data imbalance graph indicates a skewed distribution of approved and rejected applicants, both left and right skewed. Sole reliance on accuracy and ROC scores may be insufficient for our predictive analysis.
+
+
+### Train and test metrices 
+```{r,echo=FALSE,results='markup'}
+# Predicting on the training set
+train_predictions <- predict(Logit, newdata = data_train, type = "response")
+
+# Converting probabilities to class labels (1 or 0)
+train_predictions_class <- ifelse(train_predictions > 0.49, 1, 0)
+
+# Creating confusion matrix for training set
+train_conf_matrix <- table(Predicted = train_predictions_class, Actual = data_train$loan_status)
+
+# Calculating training accuracy
+train_accuracy <- sum(diag(as.matrix(train_conf_matrix))) / sum(train_conf_matrix)
+print(paste("Training Accuracy:", round(train_accuracy * 100, 2), "%"))
+
+# Predicting on the test set
+test_predictions <- predict(Logit, newdata = data_test, type = "response")
+
+# Converting probabilities to class labels (1 or 0)
+test_predictions_class <- ifelse(test_predictions > 0.49, 1, 0)
+
+# Creating confusion matrix for test set
+test_conf_matrix <- table(Predicted = test_predictions_class, Actual = data_test$loan_status)
+
+# Calculating test accuracy
+test_accuracy <- sum(diag(as.matrix(test_conf_matrix))) / sum(test_conf_matrix)
+print(paste("Test Accuracy:", round(test_accuracy * 100, 2), "%"))
+# Precision for the training set
+train_precision <- train_conf_matrix[2, 2] / sum(train_conf_matrix[, 2])
+print(paste("Training Precision:", round(train_precision*100, 2), "%"))
+
+# Recall (Sensitivity) for the training set
+train_recall <- train_conf_matrix[2, 2] / sum(train_conf_matrix[2, ])
+print(paste("Training Recall:", round(train_recall*100, 2), "%"))
+
+# Precision for the test set
+test_precision <- test_conf_matrix[2, 2] / sum(test_conf_matrix[, 2])
+print(paste("Test Precision:", round(test_precision*100, 2), "%"))
+
+# Recall (Sensitivity) for the test set
+test_recall <- test_conf_matrix[2, 2] / sum(test_conf_matrix[2, ])
+print(paste("Test Recall:", round(test_recall*100, 2), "%"))
+```
+
+
+ **In the logistic regression model, the following performance metrics were observed:**
+
+
+- Training Accuracy: 91.45%
+- Test Accuracy: 93.09%
+- Training Precision: 88.92%
+- Training Recall: 88.51%
+- Test Precision: 90.68%
+- Test Recall: 90.97%
+
+
+These metrics reveal the model's proficiency in predicting loan approval status with high accuracy and precision. Balanced recall scores suggest effective capture of both approved and rejected instances, showcasing the logistic regression model's robust performance on training and test sets.
+
+### Confusion matrix 
+
+
+```{r confusionMatrix, echo=FALSE, results='markup'}
+
+ezids::xkabledply( confusion_matrix(Logit), title = "Confusion matrix from Logit Model" )
+
+```
+
+This confusion matrix details the model's predictions for Approved and Rejected cases, including True Positives (1979), False Positives (145), False Negatives (150), and True Negatives (1141). These metrics help calculate evaluation measures like precision, recall, and accuracy.
+
+### Receiver-Operator-Characteristic (ROC) curve and Area-Under-Curve (AUC)
+
+ROC and AUC curves measure the true positive rate (or sensitivity) against the false positive rate (or specificity). The AUC is always between 0.5 and 1. Values higher than 0.8 are considered good model fit. 
+
+```{r roc_auc, echo=FALSE,results='markup'}
+ # receiver operating characteristic curve, gives the diagnostic ability of a binary classifier system as its discrimination threshold is varied. The curve is on sensitivity/recall/true-positive-rate vs false_alarm/false-positive-rate/fall-out.
+prob=predict(Logit, type = "response" )
+data_train$prob=prob
+h <- roc(loan_status~prob, data=data_train)
+roc_curve=auc(h) 
+k_logit=roc_curve
+#plot(h)
+plot(h, main = "ROC Curve", col = "gold", lwd = 2)
+text(0.8, 0.2, paste("AUC =", round(auc(h), 3)), col = "black")
+# unloadPkg("pROC")
+```
+
+
+### McFadden pseudo R-squared
+
+```{r, echo=FALSE,results='markup'}
+NullLogit <- glm(loan_status ~ 1, data = data, family = "binomial")
+mcFadden = 1 - logLik(Logit)/logLik(NullLogit)
+mcFadden
+```
+
+In logistic regression, the log-likelihood value stands at r mcFadden[1] with 8 degrees of freedom. This value is integral in computing McFadden's pseudo R-squared, offering insights into the model's fit relative to a basic intercept-only model. A higher pseudo R-squared value is typically indicative of a superior fit. The log-likelihood value of r mcFadden[1] plays a crucial role in evaluating the goodness-of-fit in our logistic regression analysis.
+
+## Data preprocessing
+
+### Factoring the data
+```{r, echo=FALSE,results='markup'}
+data_train$self_employed<-as.numeric(data_train$self_employed)
+data_test$self_employed<-as.numeric(data_test$self_employed)
+str(data_train)
+```
+
+## KNN Model creation
+
+### Finding the best K value
+
+```{r,echo=FALSE,results='markup'}
+chooseK = function(k, train_set, val_set, train_class, val_class){
+  
+
+  set.seed(1)
+  class_knn = knn(train = train_set,    #<- training set cases
+                  test = val_set,       #<- test set cases
+                  cl = train_class,     #<- category for classification
+                  k = k) #,                #<- number of neighbors considered
+                  # use.all = TRUE)      
+  
+  tab = table(class_knn, val_class)
+  
+
+  accu = sum(tab[row(tab) == col(tab)]) / sum(tab)                         
+  cbind(k = k, accuracy = accu)
+}
+
+# The sapply() function plugs in several values into our choosen K function.
+# function(x)[function] allows to apply a series of numbers
+# to a function without running a for() loop.
+knn_different_k = sapply(seq(1, 21, by = 2),  
+                         function(x) chooseK(x, 
+                                             train_set = data_train[, c("no_of_dependents","self_employed" ,"income_annum","loan_amount","loan_term","cibil_score","luxury_assets_value","bank_asset_value")],
+                                             val_set = data_test[, c("no_of_dependents","self_employed" ,"income_annum","loan_amount","loan_term","cibil_score","luxury_assets_value","bank_asset_value")],
+                                             train_class = data_train[, "loan_status"],
+                                             val_class = data_test[, "loan_status"]))
+
+
+str(knn_different_k)
+knn_different_k = data.frame(k = knn_different_k[1,],
+                             accuracy = knn_different_k[2,])
+
+
+
+ggplot(knn_different_k,
+       aes(x = k, y = accuracy)) +
+  geom_line(color = "orange", size = 1.5) +
+  geom_point(size = 3) + 
+  labs(title = "accuracy vs k")+theme_minimal()
+
+```
+
+The above analysis delineates the influence of the number of neighbors (k) on the accuracy of loan status predictions. The accuracy vs. k chart reveals that selecting k=18 yields the highest accuracy in this particular kNN model.
+
+
+## KNN Evaluation metrices
+
+### For training
+
+```{r, echo=FALSE,results='markup'}
+
+train_predictions <- knn(train = data_train[, c("no_of_dependents","self_employed","income_annum","loan_amount","loan_term","cibil_score","luxury_assets_value","bank_asset_value")],
+                          test = data_train[, c("no_of_dependents","self_employed","income_annum","loan_amount","loan_term","cibil_score","luxury_assets_value","bank_asset_value")],
+                          cl = data_train[, "loan_status"],
+                          k = 18)
+
+
+train_conf_matrix <- table(Predicted = train_predictions, Actual = data_train$loan_status)
+
+
+print(train_conf_matrix)
+
+
+train_accuracy <- sum(diag(as.matrix(train_conf_matrix))) / sum(train_conf_matrix)
+print(paste("Training Accuracy:", round(train_accuracy * 100, 2), "%"))
+
+
+```
+
+The confusion matrix for the training data reveals that out of 2,625 instances, the model correctly predicted 1,855 approved and 311 rejected cases. The training accuracy is calculated at 63.43%.
+
+### For testing
+```{r, echo=FALSE,results='markup'}
+
+
+set.seed(1)
+bank_18NN = knn(train = data_train[,c("no_of_dependents","self_employed","income_annum","loan_amount","loan_term","cibil_score","luxury_assets_value","bank_asset_value")],test =data_test[,c("no_of_dependents","self_employed","income_annum","loan_amount","loan_term","cibil_score","luxury_assets_value","bank_asset_value")],cl = data_train[, "loan_status"],k = 18)                             
+str(bank_18NN)
+length(bank_18NN)
+table(bank_18NN)
+conf_matrix<-table(Predicted = bank_18NN, Actual = data_test$loan_status)
+accuracy <- sum(diag(as.matrix(conf_matrix))) / sum(conf_matrix)
+print(paste("Test Accuracy:", round(accuracy * 100, 2), "%"))
+```
+
+From the above test results it is evident that  accuracy is approximately 61.12%, suggesting that the kNN model with k=18 achieved this level of accuracy in correctly predicting loan approval status on the given test data. 
+
+### Confusion matrix
+```{r, echo=FALSE,results='markup'}
+IRISPREDCross <- CrossTable(data_test[,"loan_status"], bank_18NN, prop.chisq = FALSE)
+```
+
+The k-Nearest Neighbor (kNN) model achieved around 61.12% accuracy on the test dataset. Among 854 instances, it correctly predicted 532 "Approved" loans, achieving a precision of 90.68%, and accurately classified 70 "Rejected" loans, resulting in a recall of 46.7%.
+
+### Testing results
+```{r, echo=FALSE,results='markup'}
+cm = confusionMatrix(bank_18NN, reference = as.factor(data_test[, "loan_status"]) )
+cm
+precision <- cm$byClass["Precision"]
+recall <- cm$byClass["Recall"]
+
+print(paste("Precision:", round(precision, 2)))
+print(paste("Recall:", round(recall, 2)))
+```
+
+The k-Nearest Neighbor model outperforms the competition in identifying "Approved" loans with a precision of 64% and a recall of 85%, indicating slight agreement beyond chance.
+
+
+### AUC ROC curve for KNN
+```{r, echo=FALSE,results='markup'}
+
+
+set.seed(1)
+
+
+
+roc_curve <- roc(ifelse(data_test[, "loan_status"] == "Approved", 1, 0), ifelse(bank_18NN == "Approved", 1, 0))
+
+
+plot(roc_curve, main = "ROC Curve", col = "gold", lwd = 2)
+
+
+text(0.8, 0.2, paste("AUC =", round(auc(roc_curve), 3)), col = "black")
+
+
+abline(a = 0, b = 1, col = "gray", lty = 2)
+k<-auc(roc_curve)
+
+```
+
+With an AUC of 0.534 and test/train accuracies at 61.1%/63.43%, the model's performance is subpar. Recognizing this, we're exploring alternative non-parametric models for enhanced predictability.
+
+## Decision Tree model
+
+### Training
+```{r, echo=FALSE,results='markup'}
+
+
+tree_model <- rpart(loan_status ~ no_of_dependents + self_employed + income_annum +
+                      loan_amount + loan_term + cibil_score + luxury_assets_value +
+                      bank_asset_value, data = data_train, method = "class")
+
+tree_predictions <- predict(tree_model, newdata = data_train, type = "class")
+
+
+conf_matrix<-table(tree_predictions, data_train$loan_status)
+
+accuracy <- sum(diag(as.matrix(conf_matrix))) / sum(conf_matrix)
+print(paste("Train Accuracy:", round(accuracy * 100, 2), "%"))
+```
+### Testing
+```{r, echo=FALSE,results='markup'}
+
+
+tree_model <- rpart(loan_status ~ no_of_dependents + self_employed + income_annum +
+                      loan_amount + loan_term + cibil_score + luxury_assets_value +
+                      bank_asset_value, data = data_train, method = "class")
+
+
+tree_predictions <- predict(tree_model, newdata = data_test, type = "class")
+
+
+conf_matrix<-table(tree_predictions, data_test$loan_status)
+
+accuracy <- sum(diag(as.matrix(conf_matrix))) / sum(conf_matrix)
+print(paste("Test Accuracy:", round(accuracy * 100, 2), "%"))
+```
+### Testing results
+```{r, echo=FALSE,results='markup'}
+
+cm = confusionMatrix(tree_predictions, reference = as.factor(data_test[, "loan_status"]) )
+cm
+precision <- cm$byClass["Precision"]
+recall <- cm$byClass["Recall"]
+
+print(paste("Precision:", round(precision, 2)))
+print(paste("Recall:", round(recall, 2)))
+```
+Based on the model results, we obtain a precision and recall score of 95% and 99% respectively.
+
+### AUC ROC curve of decision trees
+
+```{r, echo=FALSE,results='markup'}
+tree_predictions<-as.numeric(tree_predictions)
+data_test$loan_status<-as.numeric(data_test$loan_status)
+
+roc_curve2 <- roc(data_test$loan_status, tree_predictions)
+
+
+plot(roc_curve2, main = "ROC Curve", col = "gold", lwd = 2)
+
+auc_value <- auc(roc_curve2)
+text(0.8, 0.2, paste("AUC =", round(auc_value, 3)), col = "black", cex = 1.2)
+
+cat("AUC:", auc_value, "\n")
+```
+We obtain the above AUC-ROC curve with an area under the curve value of ~95.5%, indicating that this model is a good fit for our data.
+
+### AUC Scores
+```{r, echo=FALSE,results='markup'}
+print(paste("AUC score of KNN", k))
+print(paste("AUC score of decision Tress", auc_value))
+print(paste("AUC score of Logistic regressor", k_logit))
+```
+
+So far, based on the three models we have implemented, Logistic Regression turns out to be the best performer with an AUC score of ~96.7%.
+
+## Random forest
+```{r, echo=FALSE,results='markup'}
+
+
+rf_model <- randomForest(loan_status ~ no_of_dependents + income_annum + loan_amount +
+                          loan_term + cibil_score + luxury_assets_value + bank_asset_value,
+                          data = data_train, ntree = 500, importance = TRUE)
+
+print(rf_model)
+
+```
+
+
+
+- The confusion matrix indicates strong performance in predicting both "Approved" and "Rejected" classes.
+- Class error rates are low, with 0.75% for "Approved" and 2.94% for "Rejected," showcasing accurate predictions.
+- The model's ability to correctly identify instances is evident from the high numbers on the diagonal of the confusion matrix.
+
+Overall, the random forest model proves effective in classifying loan applications based on provided features, demonstrating a low out-of-bag error rate.
+
+
+
+
+### Feature Importance Summary
+
+```{r,echo=FALSE,results='markup'}
+
+feature_importance <- importance(rf_model)
+print(feature_importance)
+```
+
+
+
+1. **Loan Term (loan_term):**
+   - Highest importance in both accuracy and Gini impurity reduction.
+
+2. **CIBIL Score (cibil_score):**
+   - Significantly important for predictive accuracy and reducing impurity.
+
+3. **Loan Amount (loan_amount):**
+   - Shows substantial importance in both metrics.
+
+4. **Income (income_annum) and Luxury Assets (luxury_assets_value):**
+   - Moderately important.
+
+5. **Bank Asset Value (bank_asset_value):**
+   - Relatively lower importance.
+
+6. **Number of Dependents (no_of_dependents):**
+   - Appears least impactful on model performance.
+
+
+## Model metrics random forest
+
+### Training and training accuracy
+```{r, echo=FALSE,results='markup'}
+rf_predictions <- predict(rf_model, newdata = data_train)
+conf_matrix<-table(rf_predictions, data_train$loan_status)
+
+accuracy <- sum(diag(as.matrix(conf_matrix))) / sum(conf_matrix)
+print(paste("Train Accuracy:", round(accuracy * 100, 2), "%"))
+
+
+rf_predictions <- predict(rf_model, newdata = data_test, type = "class")
+
+
+conf_matrix<-table(rf_predictions, data_test$loan_status)
+
+accuracy <- sum(diag(as.matrix(conf_matrix))) / sum(conf_matrix)
+print(paste("Test Accuracy:", round(accuracy * 100, 2), "%"))
+
+
+
+precision <- conf_matrix[2, 2] / sum(conf_matrix[, 2])
+recall <- conf_matrix[2, 2] / sum(conf_matrix[2, ])
+
+
+print(paste("Precision:", round(precision, 2)))
+print(paste("Recall:", round(recall, 2)))
+```
+
+
+
+-The model attained flawless accuracy on the training set, showcasing its ability to learn from the dataset. It also sustained a high accuracy of `r round(accuracy * 100, 2)`\% on the test data, indicating strong generalization to new instances.
+
+- The scores suggest high precision (`r round(precision, 2)`\%) in correctly identifying positives and strong recall (`r round(recall, 2)`\%) in capturing most actual positives. The model excels in both precision and recall, showcasing its effectiveness in loan application classification.
+
+### AUC ROC Curve
+
+```{r, echo=FALSE,results='markup'}
+
+rf_predictions<-as.numeric(rf_predictions)
+data_test$loan_status<-as.numeric(data_test$loan_status)
+
+roc_curve2 <- roc(data_test$loan_status, rf_predictions)
+
+
+plot(roc_curve2, main = "ROC Curve", col = "gold", lwd = 2)
+
+
+rf_auc_value <- auc(roc_curve2)
+text(0.8, 0.2, paste("AUC =", round(rf_auc_value, 3)), col = "black", cex = 1.2)
+
+
+cat("AUC:", rf_auc_value, "\n")
+```
+
+
+The random forest model achieved an Area Under the Curve (AUC) score of `r round(auc_value*100, 2)`\%. 
+
+An AUC score nearing 1 signifies strong discriminatory power, indicating the model excels in distinguishing between classes. The high AUC underscores the random forest model's robustness in classifying loan applications.
+
+
+### AUC Scores
+```{r, echo=FALSE,results='markup'}
+print(paste("AUC score of KNN", k))
+print(paste("AUC score of decision Tress", auc_value))
+print(paste("AUC score of Logistic regressor", k_logit))
+print(paste("AUC score of Random Forest", rf_auc_value))
+```
+
+
+
+
+## Model Result chart
+```{r, echo=FALSE,results='markup'}
+auc_values <- c(k[1], auc_value[1], k_logit[1],rf_auc_value[1])
+model_names <- c("KNN", "Decision Tree", "Logistic Regression","Random Forest")  
+
+
+plot(auc_values, type = "o", col = "gold", pch = 16, lty = 1,
+     xlab = "Model", ylab = "AUC Score",
+     main = "AUC Score Progression", xaxt = "n")  # xaxt = "n" to suppress default x-axis
+
+
+grid()
+
+axis(side = 1, at = 1:length(model_names), labels = model_names)
+
+abline(h = 0.8, col = "red", lty = 2)
+```
+
+
+
+- **Random Forest:** Achieving the highest AUC score of `r rf_auc_value[1]*100`\%, the Random Forest model demonstrates superior discriminative capability. This underscores its suitability for the given classification task.
+
+- **Logistic Regression:** With an AUC score of `r k_logit[1]*100`\%, Logistic Regression performs admirably and proves to be a robust model for the task.
+
+- **Decision Tree:** The Decision Tree model yields a respectable AUC score of `r auc_value[1]*100`\%, positioning it as a viable choice for classification.
+
+- **KNN:** While KNN lags behind the other models with an AUC score of `r k[1]*100`\%, its performance is noteworthy and may still be relevant depending on the specific requirements of the application.
+
+
+# Conclusion
+
+In summary, our project delves into a Kaggle dataset to scrutinize the intricacies of individual loan approval. Drawing from our experiences as international students, we provide insights into the expanding lending landscape. Our results underscore the pivotal role of the CIBIL score and employ various prediction models for precision. We advise applicants to prioritize their credit scores and align preferences with financial goals. Simultaneously, lending institutions can bolster decision-making efficiency. Overall, our work enhances the comprehension of loan dynamics, offering advantages to lenders and borrowers globally
+
+# References
+
+[1] Sheikh, M. A., Goel, A. K., & Kumar, T. (2020, July). An approach for prediction of loan approval using machine learning algorithm. In 2020 International Conference on Electronics and Sustainable Communication Systems (ICESC)(pp. 490-494). IEEE.
+
+[2] Ndayisenga, T. (2021). Bank loan approval prediction using machine learning techniques (Doctoral dissertation).
+
+[3] Murthy, P. S., Shekar, G. S., Rohith, P., & Reddy, G. V. V. (2020). Loan Approval Prediction System Using Machine Learning. Journal of Innovation in Information Technology, 4(1), 21-24.
+
