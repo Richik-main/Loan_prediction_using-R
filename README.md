@@ -2,5 +2,5 @@
 
 # Music Recommendation System
 <p align="center">
-<img src="data/loan-process.png" width="400" height="350" title="Loan" alt="Loan Logo">
+<img src="Data/loan-process.png" width="400" height="350" title="Loan" alt="Loan Logo">
 </p>
