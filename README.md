@@ -3,7 +3,7 @@
 
 <p align="center">
 
-![Loan Prediction System](./mnt/data/A_flat-style_digital_illustration_infographic_show.png)
+![Loan Prediction System](./mnt/data/imagework.png)
 </p>
 
 
