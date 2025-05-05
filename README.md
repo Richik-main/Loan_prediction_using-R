@@ -2,8 +2,8 @@
 
 
 <p align="center">
-![Workflow May 4, 2025, 09_22_13 PM](https://github.com/user-attachments/assets/d76ef7f4-0c12-4501-a10d-494e5ec97a35)
 
+![Loan Prediction System](./mnt/data/A_flat-style_digital_illustration_infographic_show.png)
 </p>
 
 
