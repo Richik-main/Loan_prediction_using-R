@@ -3,7 +3,7 @@
 
 <p align="center">
 
-![Loan Prediction System](./mnt/data/imagework.png)
+![Loan Prediction System](/Data/Imagework.png)
 </p>
 
 
