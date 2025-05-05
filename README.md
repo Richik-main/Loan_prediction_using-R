@@ -2,7 +2,8 @@
 
 
 <p align="center">
-<img src="Data/loan-process.png" width="500" height="350" title="Loan" alt="Loan Logo">
+![image](https://github.com/user-attachments/assets/4246b7d7-6d6a-4a3e-8c38-3b6b82dfd710)
+
 </p>
 
 
